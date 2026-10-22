@@ -1,0 +1,40 @@
+﻿{
+  "generated_at": "2026-10-23T08:00:00.000Z",
+  "project": "Revenue Intelligence Inbox",
+  "student": "Arjun V B – 711523BCB009",
+  "total_records": 10,
+  "files": [
+    {
+      "filename": "conversations.json",
+      "format": "JSON",
+      "records": 10,
+      "description": "Full conversation dataset with all metadata, action items and tags"
+    },
+    {
+      "filename": "conversations.csv",
+      "format": "CSV",
+      "records": 10,
+      "description": "Flat CSV for Excel/Sheets/BI tools"
+    },
+    {
+      "filename": "manifest.json",
+      "format": "JSON",
+      "records": 1,
+      "description": "This manifest file"
+    }
+  ],
+  "summary": {
+    "total_pipeline_value": 476600,
+    "critical_items": 2,
+    "high_priority": 4,
+    "at_risk_deals": 1,
+    "reps": ["Sarah Chen", "Mark Davis", "James Wilson", "Emily Ross"],
+    "stages": ["Discovery", "Proposal", "Technical Review", "Negotiation", "Closed Lost"],
+    "date_range": { "from": "2026-10-16", "to": "2026-10-20" }
+  },
+  "deduplication": {
+    "method": "ID match + account/rep/date soft match",
+    "duplicates_detected": 1,
+    "updates_applied": 0
+  }
+}

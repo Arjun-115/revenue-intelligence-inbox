@@ -1,0 +1,11 @@
+﻿id,type,date,rep,account,contact,deal_value,stage,sentiment,priority,risk_flag,duration_min
+CALL-001,call,2026-10-20T09:15:00,Sarah Chen,Acme Corp,John Miller,48000,Negotiation,positive,high,false,32
+CALL-002,call,2026-10-20T11:30:00,Mark Davis,TechStart Inc,Priya Nair,12000,Discovery,neutral,medium,false,18
+MEET-001,meeting,2026-10-19T14:00:00,Sarah Chen,GlobalRetail Ltd,David Wong,95000,Proposal,negative,critical,true,60
+CALL-003,call,2026-10-19T10:00:00,James Wilson,FinServ Group,Lisa Park,67000,Negotiation,positive,high,false,45
+MEET-002,meeting,2026-10-18T15:30:00,Mark Davis,HealthCo Systems,Robert Kim,130000,Technical Review,positive,high,false,90
+CALL-004,call,2026-10-18T09:00:00,Emily Ross,SmallBiz Co,Tom Bradley,3600,Closed Lost,negative,low,false,12
+CALL-005,call,2026-10-17T13:00:00,James Wilson,MediaGroup,Anna Torres,25000,Proposal,neutral,medium,false,28
+MEET-003,meeting,2026-10-17T10:00:00,Emily Ross,EduTech Solutions,Michael Green,18000,Discovery,positive,medium,false,45
+CALL-006,call,2026-10-16T11:00:00,Sarah Chen,RetailMax,Jennifer Lee,78000,Negotiation,positive,critical,false,55
+
