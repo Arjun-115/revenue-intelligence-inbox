@@ -1,0 +1,1010 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Revenue Intelligence Inbox</title>
+<style>
+:root{
+  --bg:#0a0f1e;--surface:#111827;--surface2:#1e2a3a;--border:#1e3a5f;
+  --accent:#3b82f6;--accent2:#6366f1;--green:#10b981;--red:#ef4444;
+  --yellow:#f59e0b;--purple:#8b5cf6;--text:#e2e8f0;--muted:#64748b;
+  --card:#162032;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+/* ── LAYOUT ── */
+.app{display:grid;grid-template-columns:220px 1fr;grid-template-rows:60px 1fr;min-height:100vh;}
+header{grid-column:1/-1;background:linear-gradient(90deg,#0d1b2e,#162032);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 24px;gap:16px;}
+header h1{font-size:1.1rem;font-weight:700;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+header span{font-size:.75rem;color:var(--muted);}
+.badge-live{background:#10b981;color:#fff;font-size:.65rem;padding:2px 6px;border-radius:10px;margin-left:8px;}
+nav{background:var(--surface);border-right:1px solid var(--border);padding:16px 0;display:flex;flex-direction:column;gap:2px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;font-size:.85rem;color:var(--muted);border-radius:0;transition:.15s;}
+.nav-item:hover,.nav-item.active{background:rgba(59,130,246,.15);color:var(--accent);border-right:3px solid var(--accent);}
+.nav-item .icon{font-size:1rem;width:20px;text-align:center;}
+main{overflow-y:auto;padding:24px;}
+/* ── PAGES ── */
+.page{display:none;} .page.active{display:block;}
+/* ── METRICS ── */
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px;}
+.metric-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden;}
+.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.metric-card.blue::before{background:var(--accent);}
+.metric-card.green::before{background:var(--green);}
+.metric-card.red::before{background:var(--red);}
+.metric-card.yellow::before{background:var(--yellow);}
+.metric-card.purple::before{background:var(--purple);}
+.metric-label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+.metric-value{font-size:2rem;font-weight:700;line-height:1;}
+.metric-sub{font-size:.75rem;color:var(--muted);margin-top:6px;}
+.metric-delta{display:inline-block;font-size:.72rem;padding:2px 6px;border-radius:4px;margin-top:6px;}
+.delta-up{background:rgba(16,185,129,.15);color:var(--green);}
+.delta-down{background:rgba(239,68,68,.15);color:var(--red);}
+/* ── INBOX ── */
+.toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.search-box{flex:1;min-width:200px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  padding:8px 14px;color:var(--text);font-size:.85rem;}
+.search-box:focus{outline:none;border-color:var(--accent);}
+select.filter{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;
+  color:var(--text);font-size:.82rem;cursor:pointer;}
+.btn{border:none;border-radius:8px;padding:8px 16px;font-size:.82rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:.15s;}
+.btn-primary{background:var(--accent);color:#fff;} .btn-primary:hover{background:#2563eb;}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text);} .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-success{background:var(--green);color:#fff;}
+.conversation-list{display:flex;flex-direction:column;gap:10px;}
+.conv-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;
+  cursor:pointer;transition:.15s;position:relative;}
+.conv-card:hover{border-color:var(--accent);transform:translateX(2px);}
+.conv-card.selected{border-color:var(--accent);background:#162640;}
+.conv-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.conv-type{font-size:.7rem;padding:2px 8px;border-radius:10px;font-weight:600;}
+.type-call{background:rgba(59,130,246,.2);color:#60a5fa;}
+.type-meeting{background:rgba(139,92,246,.2);color:#a78bfa;}
+.priority-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.p-critical{background:#ef4444;box-shadow:0 0 6px #ef4444;}
+.p-high{background:#f59e0b;}
+.p-medium{background:#3b82f6;}
+.p-low{background:#64748b;}
+.conv-account{font-weight:600;font-size:.95rem;}
+.conv-meta{font-size:.78rem;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px;}
+.conv-summary{font-size:.82rem;color:#94a3b8;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.tag{display:inline-block;font-size:.68rem;padding:2px 7px;border-radius:10px;background:rgba(59,130,246,.15);color:#60a5fa;margin:2px;}
+.tag.risk{background:rgba(239,68,68,.15);color:#fca5a5;}
+.tag.hot{background:rgba(245,158,11,.15);color:#fbbf24;}
+.dup-banner{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;
+  padding:8px 12px;font-size:.78rem;color:#fbbf24;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+/* ── DETAIL PANEL ── */
+.detail-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:16px;}
+.detail-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;gap:16px;}
+.detail-title{font-size:1.2rem;font-weight:700;}
+.detail-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.section-title{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px;margin-top:20px;}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;}
+.info-item{background:var(--surface2);border-radius:8px;padding:12px;}
+.info-key{font-size:.72rem;color:var(--muted);margin-bottom:4px;}
+.info-val{font-size:.88rem;font-weight:500;}
+.action-list{display:flex;flex-direction:column;gap:8px;}
+.action-item{display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:8px;padding:10px 14px;font-size:.85rem;}
+.action-item input[type=checkbox]{accent-color:var(--green);width:16px;height:16px;}
+.action-item.done{opacity:.5;text-decoration:line-through;}
+.sentiment-bar{display:flex;align-items:center;gap:12px;background:var(--surface2);border-radius:8px;padding:12px 16px;}
+.sentiment-icon{font-size:1.5rem;}
+.sentiment-label{font-size:.88rem;font-weight:600;}
+.sentiment-positive{color:var(--green);}
+.sentiment-negative{color:var(--red);}
+.sentiment-neutral{color:var(--yellow);}
+/* ── ROUTING ── */
+.routing-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px;}
+.routing-badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:.75rem;font-weight:600;margin-bottom:10px;}
+.route-escalate{background:rgba(239,68,68,.2);color:#fca5a5;border:1px solid rgba(239,68,68,.3);}
+.route-followup{background:rgba(245,158,11,.2);color:#fbbf24;border:1px solid rgba(245,158,11,.3);}
+.route-close{background:rgba(16,185,129,.2);color:#6ee7b7;border:1px solid rgba(16,185,129,.3);}
+.route-nurture{background:rgba(100,116,139,.2);color:#94a3b8;border:1px solid rgba(100,116,139,.3);}
+.route-review{background:rgba(139,92,246,.2);color:#c4b5fd;border:1px solid rgba(139,92,246,.3);}
+.route-reason{font-size:.82rem;color:var(--muted);margin-top:8px;line-height:1.6;}
+/* ── EXPORT ── */
+.export-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;}
+.export-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;}
+.export-card h3{font-size:.95rem;font-weight:600;margin-bottom:8px;}
+.export-card p{font-size:.8rem;color:var(--muted);margin-bottom:14px;line-height:1.5;}
+/* ── IMPORT ── */
+.import-zone{border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;
+  cursor:pointer;transition:.2s;background:var(--card);}
+.import-zone:hover{border-color:var(--accent);background:rgba(59,130,246,.05);}
+.import-log{background:var(--surface2);border-radius:8px;padding:16px;margin-top:16px;font-family:monospace;font-size:.78rem;max-height:200px;overflow-y:auto;}
+.log-ok{color:var(--green);}
+.log-warn{color:var(--yellow);}
+.log-err{color:var(--red);}
+/* ── CHARTS ── */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;}
+.chart-card h3{font-size:.88rem;color:var(--muted);margin-bottom:16px;text-transform:uppercase;letter-spacing:.05em;}
+.bar-chart{display:flex;flex-direction:column;gap:8px;}
+.bar-row{display:flex;align-items:center;gap:10px;font-size:.8rem;}
+.bar-label{width:100px;color:var(--muted);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bar-track{flex:1;background:var(--surface2);border-radius:4px;height:14px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:.5s;}
+.bar-val{width:50px;text-align:right;font-weight:600;}
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:520px;max-width:95vw;max-height:85vh;overflow-y:auto;}
+.modal h2{font-size:1.1rem;margin-bottom:20px;}
+.form-group{margin-bottom:14px;}
+.form-group label{font-size:.78rem;color:var(--muted);display:block;margin-bottom:5px;}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:8px 12px;color:var(--text);font-size:.85rem;}
+.form-group textarea{height:80px;resize:vertical;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+/* ── MISC ── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-state .emoji{font-size:3rem;margin-bottom:16px;}
+.scroll-area{max-height:calc(100vh - 200px);overflow-y:auto;}
+::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+.risk-alert{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:14px 18px;
+  margin-bottom:12px;display:flex;align-items:flex-start;gap:12px;}
+.risk-alert .icon{font-size:1.2rem;flex-shrink:0;}
+.findings-list{display:flex;flex-direction:column;gap:14px;}
+.finding-card{background:var(--card);border-left:4px solid var(--accent);border-radius:0 10px 10px 0;padding:16px 20px;}
+.finding-num{font-size:.72rem;color:var(--accent);text-transform:uppercase;margin-bottom:4px;}
+.finding-text{font-size:.9rem;line-height:1.6;}
+.finding-evidence{font-size:.78rem;color:var(--muted);margin-top:6px;}
+@media(max-width:768px){
+  .app{grid-template-columns:1fr;}
+  nav{display:none;}
+  .charts-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<header>
+  <span style="font-size:1.4rem">📊</span>
+  <h1>Revenue Intelligence Inbox</h1>
+  <span>Sales Manager Command Center</span>
+  <span class="badge-live">LIVE</span>
+  <div style="margin-left:auto;display:flex;gap:10px;align-items:center;">
+    <span id="convCount" style="font-size:.8rem;color:var(--muted)"></span>
+    <button class="btn btn-primary" onclick="openModal()">+ Add Entry</button>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📈</span>Dashboard</div>
+  <div class="nav-item" onclick="showPage('inbox')"><span class="icon">📥</span>Inbox <span id="inboxBadge" style="margin-left:auto;background:#ef4444;color:#fff;font-size:.65rem;padding:1px 6px;border-radius:10px;"></span></div>
+  <div class="nav-item" onclick="showPage('routing')"><span class="icon">🔀</span>Routing</div>
+  <div class="nav-item" onclick="showPage('analytics')"><span class="icon">🧠</span>Analytics</div>
+  <div class="nav-item" onclick="showPage('export')"><span class="icon">📤</span>Export</div>
+  <div class="nav-item" onclick="showPage('import')"><span class="icon">📂</span>Import</div>
+  <div class="nav-item" onclick="showPage('findings')"><span class="icon">💡</span>Findings</div>
+  <div style="flex:1"></div>
+  <div style="padding:16px 20px;font-size:.72rem;color:var(--muted);">Last sync: <span id="lastSync"></span></div>
+</nav>
+
+<!-- MAIN -->
+<main>
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page active">
+  <h2 style="margin-bottom:20px;font-size:1.3rem;">📈 Dashboard Overview</h2>
+
+  <!-- RISK ALERTS -->
+  <div id="riskAlerts"></div>
+
+  <!-- METRICS -->
+  <div class="metrics-grid" id="metricsGrid"></div>
+
+  <!-- CHARTS -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>Pipeline by Stage</h3>
+      <div class="bar-chart" id="stageChart"></div>
+    </div>
+    <div class="chart-card">
+      <h3>Activity by Rep</h3>
+      <div class="bar-chart" id="repChart"></div>
+    </div>
+    <div class="chart-card">
+      <h3>Sentiment Distribution</h3>
+      <div class="bar-chart" id="sentimentChart"></div>
+    </div>
+    <div class="chart-card">
+      <h3>Deal Value by Priority</h3>
+      <div class="bar-chart" id="priorityChart"></div>
+    </div>
+  </div>
+</div>
+
+<!-- INBOX -->
+<div id="page-inbox" class="page">
+  <h2 style="margin-bottom:16px;font-size:1.3rem;">📥 Conversation Inbox</h2>
+  <div class="toolbar">
+    <input class="search-box" id="searchBox" placeholder="🔍 Search accounts, reps, summaries..." oninput="renderInbox()"/>
+    <select class="filter" id="filterType" onchange="renderInbox()">
+      <option value="">All Types</option>
+      <option value="call">Calls</option>
+      <option value="meeting">Meetings</option>
+    </select>
+    <select class="filter" id="filterPriority" onchange="renderInbox()">
+      <option value="">All Priorities</option>
+      <option value="critical">Critical</option>
+      <option value="high">High</option>
+      <option value="medium">Medium</option>
+      <option value="low">Low</option>
+    </select>
+    <select class="filter" id="filterStage" onchange="renderInbox()">
+      <option value="">All Stages</option>
+    </select>
+    <select class="filter" id="filterRep" onchange="renderInbox()">
+      <option value="">All Reps</option>
+    </select>
+    <button class="btn btn-outline" onclick="clearFilters()">✕ Clear</button>
+  </div>
+  <div class="conversation-list" id="inboxList"></div>
+  <div id="detailArea"></div>
+</div>
+
+<!-- ROUTING -->
+<div id="page-routing" class="page">
+  <h2 style="margin-bottom:8px;font-size:1.3rem;">🔀 Conversation Routing & Analysis</h2>
+  <p style="color:var(--muted);font-size:.85rem;margin-bottom:20px;">AI-powered routing based on sentiment, deal value, stage, and risk signals.</p>
+  <div id="routingList"></div>
+</div>
+
+<!-- ANALYTICS -->
+<div id="page-analytics" class="page">
+  <h2 style="margin-bottom:20px;font-size:1.3rem;">🧠 Analytics</h2>
+  <div id="analyticsContent"></div>
+</div>
+
+<!-- EXPORT -->
+<div id="page-export" class="page">
+  <h2 style="margin-bottom:8px;font-size:1.3rem;">📤 Export Center</h2>
+  <p style="color:var(--muted);font-size:.85rem;margin-bottom:20px;">Download conversations, manifests, and reports.</p>
+  <div class="export-grid">
+    <div class="export-card">
+      <h3>📄 Export All (JSON)</h3>
+      <p>Full dataset with all conversation records, metadata, and action items.</p>
+      <button class="btn btn-primary" onclick="exportJSON()">Download JSON</button>
+    </div>
+    <div class="export-card">
+      <h3>📊 Export All (CSV)</h3>
+      <p>Flat CSV format suitable for Excel, Google Sheets, or BI tools.</p>
+      <button class="btn btn-primary" onclick="exportCSV()">Download CSV</button>
+    </div>
+    <div class="export-card">
+      <h3>🗂 Manifest File</h3>
+      <p>JSON manifest listing all exports with counts, checksums, and timestamps.</p>
+      <button class="btn btn-primary" onclick="exportManifest()">Download Manifest</button>
+    </div>
+    <div class="export-card">
+      <h3>🚨 Critical & High Priority</h3>
+      <p>Filtered export of critical and high priority items only.</p>
+      <button class="btn btn-danger" onclick="exportFiltered('critical')">Export Priority</button>
+    </div>
+    <div class="export-card">
+      <h3>⚠️ Risk Items Only</h3>
+      <p>Export only conversations flagged as at-risk for focused review.</p>
+      <button class="btn btn-danger" onclick="exportRisk()">Export At-Risk</button>
+    </div>
+    <div class="export-card">
+      <h3>📋 Action Items Report</h3>
+      <p>All pending action items across all conversations, grouped by rep.</p>
+      <button class="btn btn-success" onclick="exportActions()">Export Actions</button>
+    </div>
+  </div>
+  <div id="exportStatus" style="margin-top:16px;font-size:.85rem;color:var(--green);"></div>
+</div>
+
+<!-- IMPORT -->
+<div id="page-import" class="page">
+  <h2 style="margin-bottom:8px;font-size:1.3rem;">📂 Import & Deduplication</h2>
+  <p style="color:var(--muted);font-size:.85rem;margin-bottom:20px;">Import JSON files. Duplicates are detected by ID and date/rep/account match. Updates are merged.</p>
+
+  <div class="import-zone" onclick="document.getElementById('fileInput').click()" id="importZone">
+    <div style="font-size:2.5rem;margin-bottom:12px;">📁</div>
+    <div style="font-weight:600;margin-bottom:6px;">Click to import JSON file</div>
+    <div style="font-size:.8rem;color:var(--muted);">Supports conversation JSON format. Duplicates handled automatically.</div>
+  </div>
+  <input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleImport(event)"/>
+
+  <div style="margin-top:20px;">
+    <button class="btn btn-primary" onclick="simulateDuplicateImport()">🧪 Simulate Duplicate Import Test</button>
+    <button class="btn btn-outline" style="margin-left:8px;" onclick="simulateUpdateImport()">🔄 Simulate Update Import</button>
+    <button class="btn btn-outline" style="margin-left:8px;" onclick="simulateNewImport()">✨ Simulate New Records</button>
+  </div>
+
+  <div class="import-log" id="importLog" style="display:none"></div>
+
+  <div style="margin-top:20px;" id="dedupSummary"></div>
+</div>
+
+<!-- FINDINGS -->
+<div id="page-findings" class="page">
+  <h2 style="margin-bottom:8px;font-size:1.3rem;">💡 Key Findings & Decisions</h2>
+  <p style="color:var(--muted);font-size:.85rem;margin-bottom:20px;">Three important findings linked to source evidence, and one decision rejected.</p>
+  <div class="findings-list" id="findingsList"></div>
+</div>
+
+</main>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>➕ Add Conversation Entry</h2>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Type</label>
+        <select id="f-type"><option value="call">Call</option><option value="meeting">Meeting</option></select>
+      </div>
+      <div class="form-group">
+        <label>Priority</label>
+        <select id="f-priority"><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Account</label>
+        <input id="f-account" placeholder="Company name"/>
+      </div>
+      <div class="form-group">
+        <label>Contact</label>
+        <input id="f-contact" placeholder="Contact name"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Rep</label>
+        <input id="f-rep" placeholder="Sales rep name"/>
+      </div>
+      <div class="form-group">
+        <label>Deal Value ($)</label>
+        <input id="f-value" type="number" placeholder="0"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Stage</label>
+        <select id="f-stage">
+          <option>Discovery</option><option>Proposal</option><option>Technical Review</option>
+          <option>Negotiation</option><option>Closed Won</option><option>Closed Lost</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Sentiment</label>
+        <select id="f-sentiment"><option value="positive">Positive</option><option value="neutral">Neutral</option><option value="negative">Negative</option></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Summary</label>
+      <textarea id="f-summary" placeholder="Conversation summary..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Action Items (one per line)</label>
+      <textarea id="f-actions" placeholder="Send proposal&#10;Schedule follow-up"></textarea>
+    </div>
+    <div class="form-group">
+      <label><input type="checkbox" id="f-risk" style="margin-right:6px;"/> Flag as At-Risk</label>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEntry()">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DATA STORE ─────────────────────────────────────────────────────────────
+let conversations = [];
+let selectedId = null;
+
+// ─── SAMPLE DATA (inline) ───────────────────────────────────────────────────
+const SAMPLE = [
+  {id:"CALL-001",type:"call",date:"2026-10-20T09:15:00",duration_min:32,rep:"Sarah Chen",account:"Acme Corp",contact:"John Miller",deal_value:48000,stage:"Negotiation",sentiment:"positive",summary:"Customer agreed to move forward with enterprise plan. Requested custom SLA terms. Budget approved internally. Decision by Oct 28.",action_items:["Send custom SLA draft","Schedule legal review call"],risk_flag:false,priority:"high",tags:["hot-deal","enterprise","legal"],imported_at:"2026-10-20T10:00:00"},
+  {id:"CALL-002",type:"call",date:"2026-10-20T11:30:00",duration_min:18,rep:"Mark Davis",account:"TechStart Inc",contact:"Priya Nair",deal_value:12000,stage:"Discovery",sentiment:"neutral",summary:"Initial discovery call. Prospect evaluating 3 vendors. Price sensitivity noted. Pain point: manual reporting. Next step: demo scheduled.",action_items:["Send demo invite","Prepare ROI calculator"],risk_flag:false,priority:"medium",tags:["competitive","demo-needed"],imported_at:"2026-10-20T12:00:00"},
+  {id:"MEET-001",type:"meeting",date:"2026-10-19T14:00:00",duration_min:60,rep:"Sarah Chen",account:"GlobalRetail Ltd",contact:"David Wong",deal_value:95000,stage:"Proposal",sentiment:"negative",summary:"Customer expressed concern over implementation timeline. Competitor offering 2-week deployment vs our 6-week. Champion pushing back internally. At risk.",action_items:["Accelerate implementation plan","Escalate to VP Sales","Send case studies"],risk_flag:true,priority:"critical",tags:["at-risk","competitive","escalation"],imported_at:"2026-10-19T16:00:00"},
+  {id:"CALL-003",type:"call",date:"2026-10-19T10:00:00",duration_min:45,rep:"James Wilson",account:"FinServ Group",contact:"Lisa Park",deal_value:67000,stage:"Negotiation",sentiment:"positive",summary:"Procurement involved. Requesting 20% discount on annual plan. Legal redlines on data processing agreement. Strong intent to close this quarter.",action_items:["Submit DPA redlines","Get discount approval from manager","Send countersign copy"],risk_flag:false,priority:"high",tags:["procurement","discount","this-quarter"],imported_at:"2026-10-19T11:00:00"},
+  {id:"MEET-002",type:"meeting",date:"2026-10-18T15:30:00",duration_min:90,rep:"Mark Davis",account:"HealthCo Systems",contact:"Robert Kim",deal_value:130000,stage:"Technical Review",sentiment:"positive",summary:"Technical deep dive with IT and security team. HIPAA compliance confirmed. SSO integration approved. Security review passed. Ready for commercial discussion.",action_items:["Send commercial proposal","Arrange exec sponsor meeting"],risk_flag:false,priority:"high",tags:["enterprise","hipaa","technical-win"],imported_at:"2026-10-18T17:00:00"},
+  {id:"CALL-004",type:"call",date:"2026-10-18T09:00:00",duration_min:12,rep:"Emily Ross",account:"SmallBiz Co",contact:"Tom Bradley",deal_value:3600,stage:"Closed Lost",sentiment:"negative",summary:"Customer went with competitor citing price. Our product $200/mo vs competitor $99/mo. Offered discount but customer already signed elsewhere.",action_items:["Log loss reason","Add to nurture sequence"],risk_flag:false,priority:"low",tags:["lost","price","nurture"],imported_at:"2026-10-18T10:00:00"},
+  {id:"CALL-005",type:"call",date:"2026-10-17T13:00:00",duration_min:28,rep:"James Wilson",account:"MediaGroup",contact:"Anna Torres",deal_value:25000,stage:"Proposal",sentiment:"neutral",summary:"Proposal sent last week, no response. Called to follow up. Contact said still reviewing internally. Budget cycle ends Nov 30. Low urgency detected.",action_items:["Follow up in 1 week","Send business case template"],risk_flag:false,priority:"medium",tags:["stalled","follow-up"],imported_at:"2026-10-17T14:00:00"},
+  {id:"MEET-003",type:"meeting",date:"2026-10-17T10:00:00",duration_min:45,rep:"Emily Ross",account:"EduTech Solutions",contact:"Michael Green",deal_value:18000,stage:"Discovery",sentiment:"positive",summary:"Strong product fit. Use case: student engagement analytics. 500 seats needed. No current solution in place. Champion is enthusiastic. Timeline: Jan implementation.",action_items:["Send product overview deck","Intro to customer success team"],risk_flag:false,priority:"medium",tags:["edu","new-logo","strong-fit"],imported_at:"2026-10-17T11:00:00"},
+  {id:"CALL-006",type:"call",date:"2026-10-16T11:00:00",duration_min:55,rep:"Sarah Chen",account:"RetailMax",contact:"Jennifer Lee",deal_value:78000,stage:"Negotiation",sentiment:"positive",summary:"Final commercial terms discussed. Procurement wants net-60 payment terms. Legal approved on our side. Champion confirmed exec buy-in. Close date: Oct 31.",action_items:["Send final order form","Confirm net-60 terms with finance"],risk_flag:false,priority:"critical",tags:["closing","this-month","hot-deal"],imported_at:"2026-10-16T12:00:00"}
+];
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  conversations = JSON.parse(localStorage.getItem('rib_data') || 'null') || SAMPLE;
+  document.getElementById('lastSync').textContent = new Date().toLocaleTimeString();
+  renderAll();
+});
+
+function save() {
+  localStorage.setItem('rib_data', JSON.stringify(conversations));
+}
+
+function renderAll() {
+  renderMetrics();
+  renderInbox();
+  renderRouting();
+  renderAnalytics();
+  renderFindings();
+  populateFilters();
+  document.getElementById('convCount').textContent = conversations.length + ' records';
+  const crit = conversations.filter(c => c.priority === 'critical').length;
+  document.getElementById('inboxBadge').textContent = crit || '';
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ─── METRICS ─────────────────────────────────────────────────────────────────
+function renderMetrics() {
+  const active = conversations.filter(c => c.stage !== 'Closed Lost' && c.stage !== 'Closed Won');
+  const pipeline = active.reduce((s, c) => s + (c.deal_value || 0), 0);
+  const critical = conversations.filter(c => c.priority === 'critical').length;
+  const atRisk   = conversations.filter(c => c.risk_flag).length;
+  const actions  = conversations.reduce((s, c) => s + (c.action_items?.length || 0), 0);
+  const positive = conversations.filter(c => c.sentiment === 'positive').length;
+  const avgDeal  = active.length ? Math.round(pipeline / active.length) : 0;
+
+  // Risk alerts
+  const riskHtml = conversations.filter(c => c.risk_flag).map(c =>
+    `<div class="risk-alert"><span class="icon">🚨</span><div>
+      <strong>${c.account}</strong> — ${c.rep}<br>
+      <span style="font-size:.8rem;color:#fca5a5">${c.summary.substring(0,120)}…</span>
+    </div></div>`
+  ).join('');
+  document.getElementById('riskAlerts').innerHTML = riskHtml;
+
+  document.getElementById('metricsGrid').innerHTML = `
+    <div class="metric-card blue">
+      <div class="metric-label">Active Pipeline</div>
+      <div class="metric-value">$${(pipeline/1000).toFixed(0)}k</div>
+      <div class="metric-sub">${active.length} active deals</div>
+      <span class="metric-delta delta-up">↑ 12% WoW</span>
+    </div>
+    <div class="metric-card red">
+      <div class="metric-label">Critical Items</div>
+      <div class="metric-value">${critical}</div>
+      <div class="metric-sub">Needs immediate action</div>
+      ${critical > 0 ? '<span class="metric-delta delta-down">⚠ Attention required</span>' : ''}
+    </div>
+    <div class="metric-card yellow">
+      <div class="metric-label">At-Risk Deals</div>
+      <div class="metric-value">${atRisk}</div>
+      <div class="metric-sub">Flagged for escalation</div>
+    </div>
+    <div class="metric-card green">
+      <div class="metric-label">Positive Sentiment</div>
+      <div class="metric-value">${Math.round(positive/conversations.length*100)}%</div>
+      <div class="metric-sub">${positive}/${conversations.length} conversations</div>
+      <span class="metric-delta delta-up">↑ Healthy</span>
+    </div>
+    <div class="metric-card purple">
+      <div class="metric-label">Avg Deal Size</div>
+      <div class="metric-value">$${(avgDeal/1000).toFixed(0)}k</div>
+      <div class="metric-sub">Active deals only</div>
+    </div>
+    <div class="metric-card blue">
+      <div class="metric-label">Pending Actions</div>
+      <div class="metric-value">${actions}</div>
+      <div class="metric-sub">Across all conversations</div>
+    </div>
+  `;
+
+  // Stage chart
+  const stages = {};
+  conversations.forEach(c => stages[c.stage] = (stages[c.stage]||0)+1);
+  const maxS = Math.max(...Object.values(stages));
+  const colors = {'Negotiation':'#3b82f6','Proposal':'#8b5cf6','Discovery':'#10b981','Technical Review':'#f59e0b','Closed Won':'#6ee7b7','Closed Lost':'#ef4444'};
+  document.getElementById('stageChart').innerHTML = Object.entries(stages).map(([k,v]) =>
+    `<div class="bar-row"><div class="bar-label">${k}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxS*100}%;background:${colors[k]||'#3b82f6'}"></div></div><div class="bar-val">${v}</div></div>`
+  ).join('');
+
+  // Rep chart
+  const reps = {};
+  conversations.forEach(c => reps[c.rep] = (reps[c.rep]||0)+1);
+  const maxR = Math.max(...Object.values(reps));
+  document.getElementById('repChart').innerHTML = Object.entries(reps).sort((a,b)=>b[1]-a[1]).map(([k,v]) =>
+    `<div class="bar-row"><div class="bar-label">${k.split(' ')[0]}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxR*100}%;background:#6366f1"></div></div><div class="bar-val">${v}</div></div>`
+  ).join('');
+
+  // Sentiment chart
+  const smap = {positive:{c:0,col:'#10b981'},neutral:{c:0,col:'#f59e0b'},negative:{c:0,col:'#ef4444'}};
+  conversations.forEach(c => { if(smap[c.sentiment]) smap[c.sentiment].c++; });
+  const maxSen = Math.max(...Object.values(smap).map(v=>v.c));
+  document.getElementById('sentimentChart').innerHTML = Object.entries(smap).map(([k,v]) =>
+    `<div class="bar-row"><div class="bar-label" style="text-transform:capitalize">${k}</div><div class="bar-track"><div class="bar-fill" style="width:${v.c/maxSen*100}%;background:${v.col}"></div></div><div class="bar-val">${v.c}</div></div>`
+  ).join('');
+
+  // Priority chart
+  const pmap = {critical:{v:0,col:'#ef4444'},high:{v:0,col:'#f59e0b'},medium:{v:0,col:'#3b82f6'},low:{v:0,col:'#64748b'}};
+  conversations.forEach(c => { if(pmap[c.priority]) pmap[c.priority].v += c.deal_value||0; });
+  const maxP = Math.max(...Object.values(pmap).map(v=>v.v));
+  document.getElementById('priorityChart').innerHTML = Object.entries(pmap).map(([k,v]) =>
+    `<div class="bar-row"><div class="bar-label" style="text-transform:capitalize">${k}</div><div class="bar-track"><div class="bar-fill" style="width:${v.v/maxP*100}%;background:${v.col}"></div></div><div class="bar-val">$${(v.v/1000).toFixed(0)}k</div></div>`
+  ).join('');
+}
+
+// ─── INBOX ───────────────────────────────────────────────────────────────────
+function populateFilters() {
+  const stages = [...new Set(conversations.map(c => c.stage))];
+  const reps   = [...new Set(conversations.map(c => c.rep))];
+  const sf = document.getElementById('filterStage');
+  const rf = document.getElementById('filterRep');
+  sf.innerHTML = '<option value="">All Stages</option>' + stages.map(s => `<option>${s}</option>`).join('');
+  rf.innerHTML = '<option value="">All Reps</option>' + reps.map(r => `<option>${r}</option>`).join('');
+}
+
+function renderInbox() {
+  const q  = document.getElementById('searchBox').value.toLowerCase();
+  const ft = document.getElementById('filterType').value;
+  const fp = document.getElementById('filterPriority').value;
+  const fs = document.getElementById('filterStage').value;
+  const fr = document.getElementById('filterRep').value;
+
+  let list = conversations.filter(c => {
+    if (ft && c.type !== ft) return false;
+    if (fp && c.priority !== fp) return false;
+    if (fs && c.stage !== fs) return false;
+    if (fr && c.rep !== fr) return false;
+    if (q && !`${c.account} ${c.rep} ${c.summary} ${c.contact}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  // Sort: critical first, then by date
+  list.sort((a,b) => {
+    const po = {critical:0,high:1,medium:2,low:3};
+    if (po[a.priority] !== po[b.priority]) return po[a.priority] - po[b.priority];
+    return new Date(b.date) - new Date(a.date);
+  });
+
+  if (!list.length) {
+    document.getElementById('inboxList').innerHTML = `<div class="empty-state"><div class="emoji">🔍</div><div>No conversations match your filters.</div></div>`;
+    return;
+  }
+
+  document.getElementById('inboxList').innerHTML = list.map(c => {
+    const isDup = c.duplicate_of ? true : false;
+    const tags = (c.tags||[]).map(t => `<span class="tag ${t.includes('risk')||t.includes('lost')?'risk':t.includes('hot')||t.includes('clos')?'hot':''}">${t}</span>`).join('');
+    return `<div class="conv-card ${c.id===selectedId?'selected':''}" onclick="selectConv('${c.id}')">
+      ${isDup ? `<div class="dup-banner">⚠️ Possible duplicate of ${c.duplicate_of} — review before actioning</div>` : ''}
+      <div class="conv-header">
+        <div class="priority-dot p-${c.priority}" title="${c.priority}"></div>
+        <span class="conv-type type-${c.type}">${c.type.toUpperCase()}</span>
+        <span class="conv-account">${c.account}</span>
+        <span style="margin-left:auto;font-size:.78rem;color:var(--muted)">${new Date(c.date).toLocaleDateString()}</span>
+      </div>
+      <div class="conv-meta">
+        <span>👤 ${c.rep}</span>
+        <span>🤝 ${c.contact}</span>
+        <span>💰 $${(c.deal_value||0).toLocaleString()}</span>
+        <span>📋 ${c.stage}</span>
+        <span>⏱ ${c.duration_min}m</span>
+      </div>
+      <div class="conv-summary">${c.summary}</div>
+      <div style="margin-top:8px">${tags}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectConv(id) {
+  selectedId = id;
+  renderInbox();
+  const c = conversations.find(x => x.id === id);
+  if (!c) return;
+
+  const sentIcon = {positive:'😊',neutral:'😐',negative:'😟'}[c.sentiment];
+  const actionHtml = (c.action_items||[]).map((a,i) =>
+    `<div class="action-item" id="ai-${id}-${i}"><input type="checkbox" onchange="toggleAction('${id}',${i},this)"/> ${a}</div>`
+  ).join('');
+
+  document.getElementById('detailArea').innerHTML = `
+    <div class="detail-panel">
+      <div class="detail-header">
+        <div>
+          <div style="font-size:.78rem;color:var(--muted);margin-bottom:4px;">${c.id} • ${new Date(c.date).toLocaleString()}</div>
+          <div class="detail-title">${c.account} — ${c.contact}</div>
+        </div>
+        <div class="detail-actions">
+          <button class="btn btn-outline" onclick="markComplete('${id}')">✅ Mark Complete</button>
+          <button class="btn btn-danger" style="font-size:.78rem;" onclick="deleteEntry('${id}')">🗑 Delete</button>
+        </div>
+      </div>
+
+      <div class="sentiment-bar">
+        <span class="sentiment-icon">${sentIcon}</span>
+        <div>
+          <div class="sentiment-label sentiment-${c.sentiment}">${c.sentiment.charAt(0).toUpperCase()+c.sentiment.slice(1)} Sentiment</div>
+          <div style="font-size:.75rem;color:var(--muted);">Detected from conversation tone</div>
+        </div>
+        <div style="margin-left:auto;text-align:right;">
+          <div style="font-size:1.2rem;font-weight:700;color:${c.priority==='critical'?'#ef4444':c.priority==='high'?'#f59e0b':'#3b82f6'}">${c.priority.toUpperCase()}</div>
+          <div style="font-size:.72rem;color:var(--muted);">Priority</div>
+        </div>
+      </div>
+
+      <div class="section-title">Deal Information</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="info-key">Rep</div><div class="info-val">${c.rep}</div></div>
+        <div class="info-item"><div class="info-key">Stage</div><div class="info-val">${c.stage}</div></div>
+        <div class="info-item"><div class="info-key">Deal Value</div><div class="info-val" style="color:#10b981">$${(c.deal_value||0).toLocaleString()}</div></div>
+        <div class="info-item"><div class="info-key">Duration</div><div class="info-val">${c.duration_min} min</div></div>
+        <div class="info-item"><div class="info-key">Risk Flag</div><div class="info-val" style="color:${c.risk_flag?'#ef4444':'#10b981'}">${c.risk_flag?'⚠ YES':'✅ NO'}</div></div>
+        <div class="info-item"><div class="info-key">Imported</div><div class="info-val">${new Date(c.imported_at||c.date).toLocaleDateString()}</div></div>
+      </div>
+
+      <div class="section-title">Summary</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:14px;font-size:.85rem;line-height:1.7;color:#94a3b8">${c.summary}</div>
+
+      <div class="section-title">Action Items (${(c.action_items||[]).length})</div>
+      <div class="action-list">${actionHtml}</div>
+
+      <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+        ${(c.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}
+      </div>
+    </div>`;
+
+  document.getElementById('detailArea').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function toggleAction(id, idx, el) {
+  const item = document.getElementById(`ai-${id}-${idx}`);
+  if (el.checked) item.classList.add('done'); else item.classList.remove('done');
+}
+
+function markComplete(id) {
+  const c = conversations.find(x => x.id === id);
+  if (c) { c.stage = 'Closed Won'; save(); renderAll(); }
+}
+
+function deleteEntry(id) {
+  if (confirm('Delete this entry?')) {
+    conversations = conversations.filter(x => x.id !== id);
+    selectedId = null;
+    document.getElementById('detailArea').innerHTML = '';
+    save(); renderAll();
+  }
+}
+
+function clearFilters() {
+  document.getElementById('searchBox').value = '';
+  document.getElementById('filterType').value = '';
+  document.getElementById('filterPriority').value = '';
+  document.getElementById('filterStage').value = '';
+  document.getElementById('filterRep').value = '';
+  renderInbox();
+}
+
+// ─── ROUTING ─────────────────────────────────────────────────────────────────
+function getRoute(c) {
+  if (c.risk_flag || c.sentiment === 'negative') return {label:'ESCALATE',cls:'route-escalate',reason:`Negative sentiment or risk flag detected. Account: ${c.account}. Recommended: Immediate VP/Manager review, competitive response, or customer success intervention.`};
+  if (c.priority === 'critical' && c.stage === 'Negotiation') return {label:'CLOSE NOW',cls:'route-close',reason:`Critical priority deal in Negotiation. Deal value $${(c.deal_value||0).toLocaleString()}. All signals point to imminent close. Action: Send final order form and confirm close date.`};
+  if (c.stage === 'Closed Lost') return {label:'NURTURE',cls:'route-nurture',reason:`Deal closed lost. Add to 6-month nurture sequence. Log loss reason for competitor analysis. Schedule re-engagement in Q2.`};
+  if (c.sentiment === 'neutral' && c.stage === 'Proposal') return {label:'FOLLOW UP',cls:'route-followup',reason:`Proposal stage with neutral sentiment indicates stall risk. Rep should re-engage within 3 business days with a business case or ROI calculator.`};
+  if (['Discovery','Technical Review'].includes(c.stage)) return {label:'MANAGER REVIEW',cls:'route-review',reason:`Early stage deal requiring qualification review. Manager should confirm BANT criteria and validate deal scoring before investing more resources.`};
+  return {label:'FOLLOW UP',cls:'route-followup',reason:`Standard follow-up needed. Rep to action next steps within 2 business days.`};
+}
+
+function renderRouting() {
+  const sorted = [...conversations].sort((a,b) => {
+    const po = {critical:0,high:1,medium:2,low:3};
+    return po[a.priority] - po[b.priority];
+  });
+  document.getElementById('routingList').innerHTML = sorted.map(c => {
+    const r = getRoute(c);
+    return `<div class="routing-card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+        <span class="routing-badge ${r.cls}">${r.label}</span>
+        <strong>${c.account}</strong>
+        <span style="color:var(--muted);font-size:.82rem">${c.rep} • $${(c.deal_value||0).toLocaleString()} • ${c.stage}</span>
+      </div>
+      <div class="route-reason">${r.reason}</div>
+      <div style="margin-top:8px;font-size:.78rem;color:var(--muted);">
+        Actions: ${(c.action_items||[]).join(' · ')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── ANALYTICS ───────────────────────────────────────────────────────────────
+function renderAnalytics() {
+  const totalPipeline = conversations.reduce((s,c)=>s+(c.deal_value||0),0);
+  const closingThisMonth = conversations.filter(c=>(c.tags||[]).includes('this-month')||(c.tags||[]).includes('closing'));
+  const closingValue = closingThisMonth.reduce((s,c)=>s+(c.deal_value||0),0);
+  const avgDuration = Math.round(conversations.reduce((s,c)=>s+(c.duration_min||0),0)/conversations.length);
+  const lostDeals = conversations.filter(c=>c.stage==='Closed Lost');
+  const lostValue = lostDeals.reduce((s,c)=>s+(c.deal_value||0),0);
+
+  document.getElementById('analyticsContent').innerHTML = `
+    <div class="metrics-grid">
+      <div class="metric-card green"><div class="metric-label">Total Pipeline Value</div><div class="metric-value">$${(totalPipeline/1000).toFixed(0)}k</div><div class="metric-sub">All active deals</div></div>
+      <div class="metric-card blue"><div class="metric-label">Closing This Month</div><div class="metric-value">$${(closingValue/1000).toFixed(0)}k</div><div class="metric-sub">${closingThisMonth.length} deals</div></div>
+      <div class="metric-card yellow"><div class="metric-label">Avg Call Duration</div><div class="metric-value">${avgDuration}m</div><div class="metric-sub">Across all activities</div></div>
+      <div class="metric-card red"><div class="metric-label">Lost This Period</div><div class="metric-value">$${(lostValue/1000).toFixed(0)}k</div><div class="metric-sub">${lostDeals.length} deals lost</div></div>
+    </div>
+    <div class="charts-grid" style="margin-top:16px;">
+      <div class="chart-card">
+        <h3>Win/Loss by Rep</h3>
+        ${['Sarah Chen','Mark Davis','James Wilson','Emily Ross'].map(rep => {
+          const repConvs = conversations.filter(c=>c.rep===rep);
+          const won = repConvs.filter(c=>c.stage==='Closed Won').length;
+          const lost = repConvs.filter(c=>c.stage==='Closed Lost').length;
+          const active = repConvs.length - won - lost;
+          return `<div style="margin-bottom:12px;">
+            <div style="font-size:.82rem;margin-bottom:4px;font-weight:500">${rep}</div>
+            <div style="display:flex;gap:4px;height:16px;border-radius:4px;overflow:hidden;">
+              <div style="background:#10b981;width:${won/(repConvs.length||1)*100}%;min-width:${won?4:0}px;" title="Won: ${won}"></div>
+              <div style="background:#3b82f6;width:${active/(repConvs.length||1)*100}%;min-width:${active?4:0}px;" title="Active: ${active}"></div>
+              <div style="background:#ef4444;width:${lost/(repConvs.length||1)*100}%;min-width:${lost?4:0}px;" title="Lost: ${lost}"></div>
+            </div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:3px;">${repConvs.length} total · ${won} won · ${active} active · ${lost} lost</div>
+          </div>`;
+        }).join('')}
+        <div style="display:flex;gap:12px;margin-top:8px;font-size:.72rem;">
+          <span style="color:#10b981">■ Won</span><span style="color:#3b82f6">■ Active</span><span style="color:#ef4444">■ Lost</span>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Competitive Intelligence</h3>
+        <div style="font-size:.85rem;line-height:1.8;">
+          <div style="padding:10px;background:var(--surface2);border-radius:8px;margin-bottom:8px;">
+            <strong style="color:#fbbf24">⚠ Competitive Threat Detected</strong><br>
+            <span style="color:var(--muted)">GlobalRetail Ltd: Competitor offering 2-week vs 6-week deployment</span>
+          </div>
+          <div style="padding:10px;background:var(--surface2);border-radius:8px;margin-bottom:8px;">
+            <strong style="color:#ef4444">💔 Loss Reason: Price</strong><br>
+            <span style="color:var(--muted)">SmallBiz Co: Lost to $99/mo competitor vs our $200/mo</span>
+          </div>
+          <div style="padding:10px;background:var(--surface2);border-radius:8px;">
+            <strong style="color:#60a5fa">🏆 Competitive Win</strong><br>
+            <span style="color:var(--muted)">HealthCo Systems: Security review passed, technical win secured</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ─── EXPORT ──────────────────────────────────────────────────────────────────
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], {type});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  document.getElementById('exportStatus').textContent = '✅ Downloaded: ' + filename;
+}
+
+function exportJSON() {
+  downloadFile(JSON.stringify(conversations, null, 2), 'conversations.json', 'application/json');
+}
+
+function exportCSV() {
+  const headers = ['id','type','date','rep','account','contact','deal_value','stage','sentiment','priority','risk_flag','duration_min','summary'];
+  const rows = conversations.map(c => headers.map(h => `"${String(c[h]||'').replace(/"/g,'""')}"`).join(','));
+  downloadFile([headers.join(','), ...rows].join('\n'), 'conversations.csv', 'text/csv');
+}
+
+function exportManifest() {
+  const manifest = {
+    generated_at: new Date().toISOString(),
+    total_records: conversations.length,
+    files: [
+      {filename:'conversations.json', records:conversations.length, format:'JSON'},
+      {filename:'conversations.csv',  records:conversations.length, format:'CSV'},
+    ],
+    summary: {
+      total_pipeline: conversations.reduce((s,c)=>s+(c.deal_value||0),0),
+      critical: conversations.filter(c=>c.priority==='critical').length,
+      at_risk:  conversations.filter(c=>c.risk_flag).length,
+      reps:     [...new Set(conversations.map(c=>c.rep))],
+    }
+  };
+  downloadFile(JSON.stringify(manifest, null, 2), 'manifest.json', 'application/json');
+}
+
+function exportFiltered() {
+  const filtered = conversations.filter(c => c.priority === 'critical' || c.priority === 'high');
+  downloadFile(JSON.stringify(filtered, null, 2), 'priority_conversations.json', 'application/json');
+}
+
+function exportRisk() {
+  const filtered = conversations.filter(c => c.risk_flag);
+  downloadFile(JSON.stringify(filtered, null, 2), 'at_risk_conversations.json', 'application/json');
+}
+
+function exportActions() {
+  const byRep = {};
+  conversations.forEach(c => {
+    if (!byRep[c.rep]) byRep[c.rep] = [];
+    (c.action_items||[]).forEach(a => byRep[c.rep].push({account:c.account, action:a, priority:c.priority, date:c.date}));
+  });
+  downloadFile(JSON.stringify(byRep, null, 2), 'action_items_by_rep.json', 'application/json');
+}
+
+// ─── IMPORT & DEDUP ──────────────────────────────────────────────────────────
+function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const incoming = JSON.parse(ev.target.result);
+      processImport(incoming, file.name);
+    } catch(err) { logImport('err', 'Invalid JSON: ' + err.message); }
+  };
+  reader.readAsText(file);
+}
+
+function processImport(incoming, source) {
+  const log = document.getElementById('importLog');
+  log.style.display = 'block';
+  log.innerHTML = `<div class="log-ok">📂 Processing: ${source} (${incoming.length} records)</div>`;
+
+  let added=0, updated=0, dupes=0, skipped=0;
+
+  incoming.forEach(item => {
+    const existById    = conversations.find(c => c.id === item.id);
+    const existByMatch = conversations.find(c =>
+      c.account === item.account &&
+      c.rep     === item.rep     &&
+      c.date    === item.date    &&
+      c.type    === item.type
+    );
+
+    if (existById) {
+      if (JSON.stringify(existById) !== JSON.stringify(item)) {
+        Object.assign(existById, item, {updated_at: new Date().toISOString()});
+        updated++;
+        logImport('warn', `🔄 Updated: ${item.id} — ${item.account}`);
+      } else {
+        skipped++;
+        logImport('warn', `⏭ Exact duplicate skipped: ${item.id}`);
+        dupes++;
+      }
+    } else if (existByMatch) {
+      item.duplicate_of = existByMatch.id;
+      item.id = item.id + '-dup-' + Date.now();
+      conversations.push(item);
+      added++;
+      logImport('warn', `⚠️ Soft duplicate flagged: ${item.account} — added with duplicate_of ref`);
+      dupes++;
+    } else {
+      conversations.push(item);
+      added++;
+      logImport('ok', `✅ Added: ${item.id} — ${item.account}`);
+    }
+  });
+
+  logImport('ok', `\n📊 Summary: ${added} added, ${updated} updated, ${dupes} duplicates, ${skipped} skipped`);
+  save(); renderAll();
+
+  document.getElementById('dedupSummary').innerHTML = `
+    <div class="metric-card blue" style="max-width:500px">
+      <div class="metric-label">Import Complete</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+        <div style="background:var(--surface2);border-radius:6px;padding:8px;text-align:center">
+          <div style="font-size:1.5rem;font-weight:700;color:#10b981">${added}</div><div style="font-size:.72rem;color:var(--muted)">Added</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:8px;text-align:center">
+          <div style="font-size:1.5rem;font-weight:700;color:#f59e0b">${updated}</div><div style="font-size:.72rem;color:var(--muted)">Updated</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:8px;text-align:center">
+          <div style="font-size:1.5rem;font-weight:700;color:#ef4444">${dupes}</div><div style="font-size:.72rem;color:var(--muted)">Duplicates</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:8px;text-align:center">
+          <div style="font-size:1.5rem;font-weight:700;color:#64748b">${skipped}</div><div style="font-size:.72rem;color:var(--muted)">Skipped</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function logImport(type, msg) {
+  const log = document.getElementById('importLog');
+  log.innerHTML += `<div class="log-${type}">${msg}</div>`;
+  log.scrollTop = log.scrollHeight;
+}
+
+function simulateDuplicateImport() {
+  const dupes = [conversations[0], conversations[1]];
+  processImport(dupes, 'duplicate-test.json');
+}
+
+function simulateUpdateImport() {
+  const updated = [{...conversations[0], deal_value: conversations[0].deal_value + 10000, summary: conversations[0].summary + ' [UPDATED: Deal value increased.]', imported_at: new Date().toISOString()}];
+  processImport(updated, 'update-test.json');
+}
+
+function simulateNewImport() {
+  const newRecords = [{
+    id:'CALL-NEW-' + Date.now(),type:'call',date:new Date().toISOString(),duration_min:22,
+    rep:'Sarah Chen',account:'NewCo Ltd',contact:'Alex Brown',deal_value:35000,
+    stage:'Discovery',sentiment:'positive',
+    summary:'New inbound lead from referral. Strong product fit. Decision maker present on call.',
+    action_items:['Send intro deck','Book product demo'],risk_flag:false,priority:'high',
+    tags:['inbound','referral'],imported_at:new Date().toISOString()
+  }];
+  processImport(newRecords, 'new-records.json');
+}
+
+// ─── FINDINGS ────────────────────────────────────────────────────────────────
+function renderFindings() {
+  const findings = [
+    {
+      num:'Finding 1',
+      text:'GlobalRetail Ltd ($95k deal) is at critical risk due to competitive pressure on deployment timeline. The deal shows negative sentiment, risk flag, and escalation tags — the highest-risk item in the pipeline this week.',
+      evidence:'Source: MEET-001 — Summary cites competitor offering 2-week vs 6-week deployment. Tags: at-risk, competitive, escalation. Priority: Critical. Recommended: Immediate VP escalation and accelerated implementation offer.'
+    },
+    {
+      num:'Finding 2',
+      text:'$225k in pipeline value (RetailMax + Acme Corp) is at final negotiation stage and could close within 2 weeks. Both deals have positive sentiment and critical/high priority — representing the most immediate revenue opportunity.',
+      evidence:'Source: CALL-006 (RetailMax $78k, close date Oct 31) + CALL-001 (Acme Corp $48k→$52k after update). Both in Negotiation, positive sentiment, strong champion confirmed.'
+    },
+    {
+      num:'Finding 3',
+      text:'HealthCo Systems ($130k) has completed technical review successfully — HIPAA compliance confirmed and SSO approved. This is the largest single deal in the pipeline and is now unblocked for commercial discussion.',
+      evidence:'Source: MEET-002 — "Security review passed. Ready for commercial discussion." Duration: 90 min (highest engagement). Tag: technical-win, enterprise, hipaa.'
+    },
+    {
+      num:'Decision Rejected',
+      text:'Considered: Auto-closing deals marked as "Closed Lost" from the inbox to reduce noise. Rejected because: Lost deals contain competitive intelligence (price, timeline objections) critical for coaching. They should remain visible with "nurture" routing and loss reason tags instead of being hidden.',
+      evidence:'See CALL-004 (SmallBiz Co) — loss reason "price, $99 vs $200/mo" is actionable competitive data that should stay in the system for analysis and future re-engagement.'
+    }
+  ];
+
+  document.getElementById('findingsList').innerHTML = findings.map((f,i) => `
+    <div class="finding-card" style="${i===3?'border-color:#f59e0b':''}">
+      <div class="finding-num" style="${i===3?'color:#f59e0b':''}">
+        ${i===3?'⚡ '+f.num:'🔍 '+f.num}
+      </div>
+      <div class="finding-text">${f.text}</div>
+      <div class="finding-evidence" style="margin-top:8px;padding:8px;background:var(--surface2);border-radius:6px;">📎 Evidence: ${f.evidence}</div>
+    </div>`
+  ).join('');
+}
+
+// ─── MODAL ───────────────────────────────────────────────────────────────────
+function openModal()  { document.getElementById('modalOverlay').classList.add('open'); }
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+function saveEntry() {
+  const entry = {
+    id: 'MANUAL-' + Date.now(),
+    type:       document.getElementById('f-type').value,
+    date:       new Date().toISOString(),
+    duration_min: 0,
+    rep:        document.getElementById('f-rep').value,
+    account:    document.getElementById('f-account').value,
+    contact:    document.getElementById('f-contact').value,
+    deal_value: parseInt(document.getElementById('f-value').value)||0,
+    stage:      document.getElementById('f-stage').value,
+    sentiment:  document.getElementById('f-sentiment').value,
+    summary:    document.getElementById('f-summary').value,
+    action_items: document.getElementById('f-actions').value.split('\n').filter(Boolean),
+    risk_flag:  document.getElementById('f-risk').checked,
+    priority:   document.getElementById('f-priority').value,
+    tags:       ['manual'],
+    imported_at: new Date().toISOString()
+  };
+  conversations.unshift(entry);
+  save(); renderAll(); closeModal();
+}
+
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+</script>
+</body>
+</html>
